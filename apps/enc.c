@@ -488,6 +488,8 @@ int enc_main(int argc, char **argv)
                 int islen = (sptr != NULL ? sizeof(salt) : 0);
 
                 BIO_printf(bio_err, "iter = %d\n", iter);
+                BIO_printf(bio_err, "str = %s\n", str);
+                BIO_printf(bio_err, "sptr = %.*s\n", islen, sptr);
                 BIO_printf(bio_err, "str_len = %lu\n", str_len);
                 BIO_printf(bio_err, "islen = %d\n", islen);
                 BIO_printf(bio_err, "iklen = %d\n", iklen);
@@ -497,6 +499,15 @@ int enc_main(int argc, char **argv)
                     BIO_printf(bio_err, "PKCS5_PBKDF2_HMAC failed\n");
                     goto end;
                 }
+                BIO_printf(bio_err, "PKCS5_PBKDF2_HMAC(\nstr = %s,\n str_len = %lu,\n sptr = %.*s,\n islen = %d,\n iter = %d,\n dgst = %s,\n iklen+ivlen = %d\n, tmpkeyiv\n);\n",
+                    str,
+                    str_len,
+                    islen, sptr,
+                    islen,
+                    iter,
+                    (dgst == EVP_sha256())? "EVP_sha256()" : "unknown",
+                    iklen+ivlen
+                );
                 /* split and move data back to global buffer */
                 memcpy(key, tmpkeyiv, iklen);
                 memcpy(iv, tmpkeyiv+iklen, ivlen);
