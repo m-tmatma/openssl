@@ -410,6 +410,9 @@ int enc_main(int argc, char **argv)
             rbio = BIO_push(b64, rbio);
     }
 
+    memset(mbuf, 0, sizeof(mbuf));
+    memset(salt, 0, sizeof(salt));
+
     if (cipher != NULL) {
         /*
          * Note that str is NULL if a key was passed on the command line, so
@@ -458,9 +461,22 @@ int enc_main(int argc, char **argv)
                     goto end;
                 }
                 sptr = salt;
+
+                BIO_printf(bio_err, "magic : %.*s\n", (int)sizeof(magic) - 1, magic);
+                BIO_printf(bio_err, "mbuf  : %.*s\n", (int)sizeof(mbuf), mbuf);
+                //BIO_printf(bio_err, "salt  : %.*s\n", (int)sizeof(salt), salt);
+                {
+                    int i;
+                    BIO_printf(bio_err, "salt  : ");
+                    for( i = 0; i < sizeof(salt); i++) {
+                        BIO_printf(bio_err, "%02X", salt[i]);
+                    }
+                    BIO_printf(bio_err, "\n");
+                }
             }
 
             if (pbkdf2 == 1) {
+
                 /*
                 * derive key and default iv
                 * concatenated into a temporary buffer
@@ -470,6 +486,12 @@ int enc_main(int argc, char **argv)
                 int ivlen = EVP_CIPHER_iv_length(cipher);
                 /* not needed if HASH_UPDATE() is fixed : */
                 int islen = (sptr != NULL ? sizeof(salt) : 0);
+
+                BIO_printf(bio_err, "iter = %d\n", iter);
+                BIO_printf(bio_err, "str_len = %lu\n", str_len);
+                BIO_printf(bio_err, "islen = %d\n", islen);
+                BIO_printf(bio_err, "iklen = %d\n", iklen);
+                BIO_printf(bio_err, "ivlen = %d\n", ivlen);
                 if (!PKCS5_PBKDF2_HMAC(str, str_len, sptr, islen,
                                        iter, dgst, iklen+ivlen, tmpkeyiv)) {
                     BIO_printf(bio_err, "PKCS5_PBKDF2_HMAC failed\n");
@@ -478,6 +500,22 @@ int enc_main(int argc, char **argv)
                 /* split and move data back to global buffer */
                 memcpy(key, tmpkeyiv, iklen);
                 memcpy(iv, tmpkeyiv+iklen, ivlen);
+                {
+                    int i;
+                    BIO_printf(bio_err, "key  : ");
+                    for( i = 0; i < iklen; i++) {
+                        BIO_printf(bio_err, "%02X", key[i]);
+                    }
+                    BIO_printf(bio_err, "\n");
+                }
+                {
+                    int i;
+                    BIO_printf(bio_err, "iv  : ");
+                    for( i = 0; i < ivlen; i++) {
+                        BIO_printf(bio_err, "%02X", iv[i]);
+                    }
+                    BIO_printf(bio_err, "\n");
+                }
             } else {
                 BIO_printf(bio_err, "*** WARNING : "
                                     "deprecated key derivation used.\n"
